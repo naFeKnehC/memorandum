@@ -51,6 +51,7 @@ export const api = {
   },
   app: {
     setAlwaysOnTop: (args: any) => ensure()!.invoke('app:setAlwaysOnTop', args),
-    setLock: (args: any) => ensure()!.invoke('app:setLock', args)
+    setLock: (args: any) => ensure()!.invoke('app:setLock', args),
+    setOpacity: (args: any) => ensure()!.invoke('app:setOpacity', args)
   }
 }

@@ -13,13 +13,13 @@
 html, body, #root { height: 100%; }
 body { background: var(--bg-app); color: var(--text); }
 
-.card {
-  @apply bg-card rounded-card shadow-card border border-black/5;
-}
+.card { @apply bg-card rounded-card shadow-card; }
 
-.btn {
-  @apply rounded-btn px-2.5 py-1.5 border border-black/10 bg-white/60 hover:bg-white transition shadow-sm;
-}
+/* 隐藏删除按钮，悬停卡片时才显示，营造便签样式 */
+.del-btn { opacity: 0; transition: opacity 120ms ease; }
+.card:hover .del-btn { opacity: 1; }
+
+.btn { @apply rounded-btn px-2.5 py-1.5 border border-black/10 bg-white/60 hover:bg-white transition shadow-sm whitespace-nowrap shrink-0; }
 
 .icon-btn { @apply btn p-1.5; }
 
@@ -28,3 +28,7 @@ body { background: var(--bg-app); color: var(--text); }
 .muted { color: var(--muted); }
 
 .task-title { @apply font-semibold text-[15px]; }
+
+/* 分区之间的分割线（便签风格的浅淡分隔） */
+.sections .section-block { border-top: 1px dashed rgba(0,0,0,0.06); }
+.sections .section-block:first-of-type { border-top: none; }

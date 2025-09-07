@@ -40,8 +40,8 @@ declare global {
       app: {
         setAlwaysOnTop(args: { value: boolean }): Promise<void>
         setLock(args: { value: boolean }): Promise<void>
+        setOpacity(args: { value: number }): Promise<void>
       }
     }
   }
 }
-

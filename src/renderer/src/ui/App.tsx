@@ -11,18 +11,18 @@ function TopBar(props: {
   onSearch: (q: string) => void
 }) {
   return (
-    <div className="flex items-center justify-between px-2 py-1 gap-2 sticky top-0 bg-appbg/80 backdrop-blur z-20 border-b border-black/5">
-      <div className="text-sm font-semibold">Memorandum</div>
-      <div className="flex items-center gap-2">
-        <input
-          placeholder="搜索"
-          className="rounded-input px-2 py-1 text-sm border border-black/10 bg-white/70 focus:outline-none"
-          onChange={(e) => props.onSearch(e.target.value)}
-        />
-        <button className="icon-btn" title="置顶" onClick={props.onToggleTop}>
+    <div className="flex items-center px-2 py-1 gap-2 sticky top-0 bg-appbg/80 backdrop-blur z-20 border-b border-black/5">
+      <div className="text-sm font-semibold shrink-0 whitespace-nowrap">Memorandum</div>
+      <input
+        placeholder="搜索"
+        className="rounded-input px-2 py-1 text-sm border border-black/10 bg-white/70 focus:outline-none flex-1 min-w-0"
+        onChange={(e) => props.onSearch(e.target.value)}
+      />
+      <div className="flex items-center gap-2 shrink-0">
+        <button className="icon-btn whitespace-nowrap" title="置顶" onClick={props.onToggleTop}>
           {props.alwaysOnTop ? '📌' : '📍'}
         </button>
-        <button className="icon-btn" title="锁定/解锁" onClick={props.onToggleLock}>
+        <button className="icon-btn whitespace-nowrap" title="锁定/解锁 (Cmd/Ctrl+Shift+L)" onClick={props.onToggleLock}>
           {props.locked ? '🔒' : '🔓'}
         </button>
       </div>
@@ -54,7 +54,7 @@ function QuickInput(props: {
         : date === tomorrowISO
           ? 'tomorrow'
           : 'custom'
-  const btn = (active: boolean) => `btn ${active ? 'bg-yellow-200 ring-1 ring-amber-300' : ''}`
+  const btn = (active: boolean) => `btn inline-flex items-center justify-center shrink-0 whitespace-nowrap ${active ? 'bg-yellow-200 ring-1 ring-amber-300' : ''}`
   const doAdd = () => {
     const title = v.trim()
     if (!title) return
@@ -82,8 +82,8 @@ function QuickInput(props: {
           }
         }}
       />
-      <div className="mt-2 flex items-center gap-2 text-xs">
-        <span className="muted">日期:</span>
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+        <span className="muted shrink-0 whitespace-nowrap">日期:</span>
         <button
           className={btn(selected === 'today')}
           aria-pressed={selected === 'today'}
@@ -107,19 +107,11 @@ function QuickInput(props: {
         </button>
         <input
           type="date"
-          className="rounded-input px-2 py-1 border border-black/10 bg-white/70"
+          placeholder="年/月/日"
+          className="rounded-btn px-2 py-1 border border-transparent bg-white/70 hover:bg-white focus:outline-none shrink-0 min-w-[140px]"
           value={date ?? ''}
           onChange={(e) => setDate(e.target.value || null)}
         />
-        <span className="muted">
-          {selected === 'today'
-            ? '今天'
-            : selected === 'tomorrow'
-              ? '明天'
-              : selected === 'none'
-                ? '无日期'
-                : date}
-        </span>
       </div>
     </div>
   )
@@ -175,7 +167,7 @@ function TaskItem({
   const [dateEditing, setDateEditing] = useState(false)
   const [dateVal, setDateVal] = useState<string | ''>(t.due_date ?? '')
   return (
-    <div className="card p-3 flex items-start gap-2 hover:shadow-card-lg">
+    <div className="card p-3 flex items-center gap-2 hover:shadow-card-lg">
       <input
         type="checkbox"
         checked={t.status === 'done'}
@@ -250,7 +242,7 @@ function TaskItem({
           )}
         </div>
       </div>
-      <button className="icon-btn" onClick={onDelete} disabled={disabled} title="删除">
+      <button className="icon-btn del-btn" onClick={onDelete} disabled={disabled} title="删除">
         🗑️
       </button>
     </div>
@@ -266,6 +258,8 @@ function GroupSection({
   kw,
   onEdit,
   onEditDate,
+  isOpen,
+  onToggleOpen,
 }: {
   title: string
   tasks: Task[]
@@ -275,26 +269,39 @@ function GroupSection({
   kw: string
   onEdit: (id: number, title: string) => void
   onEditDate: (id: number, d: string | null) => void
+  isOpen: boolean
+  onToggleOpen: () => void
 }) {
   return (
-    <section>
-      <div className="group-title">
-        {title} <span className="muted">({tasks.length})</span>
+    <section className="section-block">
+      <div
+        className="group-title flex items-center gap-2 cursor-pointer select-none"
+        onClick={onToggleOpen}
+        role="button"
+        aria-expanded={isOpen}
+        title={isOpen ? '点击折叠' : '点击展开'}
+      >
+        <span className="inline-block w-4 text-center">{isOpen ? '▾' : '▸'}</span>
+        <div>
+          {title} <span className="muted">({tasks.length})</span>
+        </div>
       </div>
-      <div className="px-2 space-y-2 py-2">
-        {tasks.map((t) => (
-          <TaskItem
-            key={t.id}
-            t={t}
-            kw={kw}
-            disabled={disabled}
-            onToggle={() => onToggle(t.id)}
-            onDelete={() => onDelete(t.id)}
-            onEdit={(title) => onEdit(t.id, title)}
-            onEditDate={(d) => onEditDate(t.id, d)}
-          />
-        ))}
-      </div>
+      {isOpen && (
+        <div className="px-2 space-y-2 py-2">
+          {tasks.map((t) => (
+            <TaskItem
+              key={t.id}
+              t={t}
+              kw={kw}
+              disabled={disabled}
+              onToggle={() => onToggle(t.id)}
+              onDelete={() => onDelete(t.id)}
+              onEdit={(title) => onEdit(t.id, title)}
+              onEditDate={(d) => onEditDate(t.id, d)}
+            />
+          ))}
+        </div>
+      )}
     </section>
   )
 }
@@ -309,6 +316,7 @@ export default function App() {
   const [later, setLater] = useState<Task[]>([])
   const [none, setNone] = useState<Task[]>([])
   const [done, setDone] = useState<Task[]>([])
+  const [open, setOpen] = useState({ today: true, tomorrow: false, week: false, later: false, none: false, done: false })
 
   const reload = async () => {
     try {
@@ -344,14 +352,14 @@ export default function App() {
     // load persisted settings
     ;(async () => {
       try {
-        const atop = await window.api.settings.get({ key: 'alwaysOnTop' })
-        const lockv = await window.api.settings.get({ key: 'lock' })
+        const atop = await api.settings.get({ key: 'alwaysOnTop' })
+        const lockv = await api.settings.get({ key: 'lock' })
         const atopBool = atop === '1' || atop === 'true'
         const lockBool = lockv === '1' || lockv === 'true'
         setAlwaysOnTop(atopBool)
         setLocked(lockBool)
-        await window.api.app.setAlwaysOnTop({ value: atopBool })
-        await window.api.app.setLock({ value: lockBool })
+        await api.app.setAlwaysOnTop({ value: atopBool })
+        await api.app.setLock({ value: lockBool })
       } catch (e) {
         /* ignore */
       }
@@ -407,8 +415,8 @@ export default function App() {
         onToggleTop={async () => {
           const v = !alwaysOnTop
           setAlwaysOnTop(v)
-          await window.api.app.setAlwaysOnTop({ value: v })
-          await window.api.settings.put({
+          await api.app.setAlwaysOnTop({ value: v })
+          await api.settings.put({
             key: 'alwaysOnTop',
             value: v ? '1' : '0',
           })
@@ -417,13 +425,13 @@ export default function App() {
         onToggleLock={async () => {
           const v = !locked
           setLocked(v)
-          await window.api.app.setLock({ value: v })
-          await window.api.settings.put({ key: 'lock', value: v ? '1' : '0' })
+          await api.app.setLock({ value: v })
+          await api.settings.put({ key: 'lock', value: v ? '1' : '0' })
         }}
         onSearch={setKeyword}
       />
       <QuickInput disabled={locked} onAdd={add} />
-      <div className="overflow-auto pb-4">
+      <div className="overflow-auto pb-4 sections">
         <GroupSection
           title="今天"
           tasks={today}
@@ -433,6 +441,8 @@ export default function App() {
           onDelete={del}
           onEdit={edit}
           onEditDate={editDate}
+          isOpen={open.today}
+          onToggleOpen={() => setOpen({ ...open, today: !open.today })}
         />
         <GroupSection
           title="明天"
@@ -443,6 +453,8 @@ export default function App() {
           onDelete={del}
           onEdit={edit}
           onEditDate={editDate}
+          isOpen={open.tomorrow}
+          onToggleOpen={() => setOpen({ ...open, tomorrow: !open.tomorrow })}
         />
         <GroupSection
           title="本周"
@@ -453,6 +465,8 @@ export default function App() {
           onDelete={del}
           onEdit={edit}
           onEditDate={editDate}
+          isOpen={open.week}
+          onToggleOpen={() => setOpen({ ...open, week: !open.week })}
         />
         <GroupSection
           title="以后"
@@ -463,6 +477,8 @@ export default function App() {
           onDelete={del}
           onEdit={edit}
           onEditDate={editDate}
+          isOpen={open.later}
+          onToggleOpen={() => setOpen({ ...open, later: !open.later })}
         />
         <GroupSection
           title="无日期"
@@ -473,6 +489,8 @@ export default function App() {
           onDelete={del}
           onEdit={edit}
           onEditDate={editDate}
+          isOpen={open.none}
+          onToggleOpen={() => setOpen({ ...open, none: !open.none })}
         />
         <GroupSection
           title="已完成"
@@ -483,6 +501,8 @@ export default function App() {
           onDelete={del}
           onEdit={edit}
           onEditDate={editDate}
+          isOpen={open.done}
+          onToggleOpen={() => setOpen({ ...open, done: !open.done })}
         />
       </div>
     </div>
