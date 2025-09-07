@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-app: #f7f3ea; /* overall light beige */
+  --card: #fff6d5; /* note card yellow */
+  --card-hover: #fff1bf;
+  --text: #2b2b2b;
+  --muted: #8a8a8a;
+}
+
+html, body, #root { height: 100%; }
+body { background: var(--bg-app); color: var(--text); }
+
+.card {
+  @apply bg-card rounded-card shadow-card border border-black/5;
+}
+
+.btn {
+  @apply rounded-btn px-2.5 py-1.5 border border-black/10 bg-white/60 hover:bg-white transition shadow-sm;
+}
+
+.icon-btn { @apply btn p-1.5; }
+
+.group-title { @apply sticky top-0 z-10 bg-appbg bg-opacity-80 backdrop-blur px-2 py-1 text-sm font-semibold; }
+
+.muted { color: var(--muted); }
+
+.task-title { @apply font-semibold text-[15px]; }
