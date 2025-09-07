@@ -4,19 +4,112 @@ import path from 'node:path'
 import { repo } from './storage'
 import { z } from 'zod'
 
+// Ensure app name is not the Electron default in dev
+try { app.setName('memo') } catch {}
+
+// Ensure app name is not the Electron default in dev
+try { app.setName('memo') } catch {}
+
+// Ensure app name is not the Electron default in dev
+try { app.setName('memo') } catch {}
+
 let win: BrowserWindow | null = null
 let clickThroughLocked = false
 let tray: Tray | null = null
 let currentOpacity = 1
 let savedOpacityBeforeLock: number | null = null
 
+// Try resolving a resource under project-root/resources in dev.
+function resolveDevResource(...segments: string[]): string | null {
+  const candidates = [
+    // electron-vite compiled main -> dist/main, go up to project root
+    path.resolve(__dirname, '../../resources', ...segments),
+    // app.getAppPath usually points to project root in dev
+    path.resolve(app.getAppPath(), 'resources', ...segments),
+    // in production, extraResources are placed under process.resourcesPath
+    path.resolve(process.resourcesPath || '', 'resources', ...segments),
+    // fallback to CWD
+    path.resolve(process.cwd(), 'resources', ...segments)
+  ]
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) return p
+    } catch {}
+  }
+  return null
+}
+
 function trayIcon() {
-  // 16x16 transparent PNG with a small black dot
-  const base64 =
-    'iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAALElEQVQoka3MsQkAIBADwYb//5pUjqgYk0F1yQ3y4mKpH0bQW3Pj3yPJE2KcYwP3Q+Q1Xy1mGAAAAABJRU5ErkJggg=='
+  // Use a single shared icon for tray (menu bar) and taskbar (Windows/Linux).
+  // Place your file at resources/icons/system.png
+  // On macOS, if you want a template-style (auto-tinted) icon, provide systemTemplate.png.
+  let chosen: { path: string; template: boolean } | null = null
+  if (process.platform === 'darwin') {
+    const t1 = resolveDevResource('icons', 'systemTemplate.png')
+    const t2 = resolveDevResource('icons', 'trayTemplate.png')
+    if (t1) chosen = { path: t1, template: true }
+    else if (t2) chosen = { path: t2, template: true }
+  }
+  if (!chosen) {
+    const s =
+      resolveDevResource('icons', 'system.png') ||
+      resolveDevResource('icons', 'tray.png') ||
+      resolveDevResource('icons', 'app.png')
+    if (s) chosen = { path: s, template: false }
+  }
+  if (chosen) {
+    let img = nativeImage.createFromPath(chosen.path)
+    if (img.isEmpty()) {
+      try { console.warn('[tray] loaded empty image from', chosen.path) } catch {}
+    } else {
+      // Resize to a sensible height for macOS menu bar while preserving scale on other OSes.
+      try {
+        const before = img.getSize()
+        const targetH = process.platform === 'darwin' ? 18 : Math.min(before.height, 24)
+        if (before.height > 0 && targetH > 0) img = img.resize({ height: targetH })
+      } catch {}
+      // For macOS, force template display to ensure visibility in light/dark menu bar.
+      if (process.platform === 'darwin') img.setTemplateImage(chosen.template || true)
+      try { console.log('[tray] using', chosen.path, 'template=', chosen.template, 'size=', img.getSize()) } catch {}
+      return img
+    }
+  }
+
+  // Fallback: tiny dot so there is at least some tray indicator.
+  const base64 = 'iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAALElEQVQoka3MsQkAIBADwYb//5pUjqgYk0F1yQ3y4mKpH0bQW3Pj3yPJE2KcYwP3Q+Q1Xy1mGAAAAABJRU5ErkJggg=='
   const img = nativeImage.createFromBuffer(Buffer.from(base64, 'base64'))
   if (process.platform === 'darwin') img.setTemplateImage(true)
   return img
+}
+
+function setMacAppMenu() {
+  if (process.platform !== 'darwin') return
+  try {
+    const template: Electron.MenuItemConstructorOptions[] = [
+      {
+        label: 'memo',
+        submenu: [
+          { role: 'about', label: '关于 memo' },
+          { type: 'separator' },
+          { role: 'services' },
+          { type: 'separator' },
+          { role: 'hide', label: '隐藏 memo' },
+          { role: 'hideOthers' },
+          { role: 'unhide' },
+          { type: 'separator' },
+          { role: 'quit', label: '退出 memo' }
+        ]
+      },
+      { label: 'Edit', submenu: [
+          { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
+          { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }
+        ]
+      },
+      { label: 'Window', submenu: [ { role: 'minimize' }, { role: 'close' } ] }
+    ]
+    const menu = Menu.buildFromTemplate(template)
+    Menu.setApplicationMenu(menu)
+  } catch {}
 }
 
 function rebuildTrayMenu() {
@@ -74,12 +167,16 @@ const createWindow = () => {
   try { /* debug logs removed */ } catch {}
 
   const isDev = !!process.env.ELECTRON_RENDERER_URL
+  // Window/Taskbar icon (Win/Linux) uses the same shared system icon.
+  const windowIconPath = process.platform === 'darwin' ? undefined : (resolveDevResource('icons', 'system.png') || undefined)
+
   win = new BrowserWindow({
     width: isDev ? 800 : 350,
     height: isDev ? 800 : 700,
     minWidth: 350,
     minHeight: 300,
-    title: 'Memorandum',
+    title: 'memo',
+    icon: windowIconPath,
     alwaysOnTop: false,
     webPreferences: {
       preload: preloadPath,
@@ -108,6 +205,7 @@ const createWindow = () => {
 
 app.whenReady().then(() => {
   createWindow()
+  setMacAppMenu()
 
   // Apply persisted window states (top/lock/opacity)
   try {
@@ -134,12 +232,21 @@ app.whenReady().then(() => {
   // Create tray
   try {
     tray = new Tray(trayIcon())
-    tray.setToolTip('Memorandum')
-    if (process.platform === 'darwin') {
-      try { tray.setTitle('Memo') } catch {}
-    }
+    tray.setToolTip('memo')
+    // On macOS, do NOT set tray title when using an icon, otherwise text can hide the image
     rebuildTrayMenu()
   } catch {}
+
+  // Set macOS Dock icon in dev when a custom app icon exists
+  try {
+    if (process.platform === 'darwin' && app.dock) {
+      // Dock should use system.png per latest requirement
+      const dockPng = resolveDevResource('icons', 'system.png')
+      if (dockPng) app.dock.setIcon(nativeImage.createFromPath(dockPng))
+    }
+  } catch {}
+
+  // Expose assets for renderer (e.g., app.png for in-app top-left icon)
 
   // Global shortcut to force UNLOCK (safety): Cmd/Ctrl+Shift+L
   try {
@@ -219,4 +326,17 @@ ipcMain.handle('app:setOpacity', (_e, { value }) => {
   try { win?.setOpacity(v) } catch {}
   rebuildTrayMenu()
   return
+})
+
+// Provide renderer with a data URL for app icon to display inside UI
+ipcMain.handle('assets:appIconDataUrl', () => {
+  try {
+    const p = resolveDevResource('icons', 'app.png')
+    if (p && fs.existsSync(p)) {
+      const buf = fs.readFileSync(p)
+      const b64 = buf.toString('base64')
+      return `data:image/png;base64,${b64}`
+    }
+  } catch {}
+  return null
 })

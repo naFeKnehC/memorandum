@@ -10,9 +10,23 @@ function TopBar(props: {
   onToggleLock: () => void
   onSearch: (q: string) => void
 }) {
+  const [icon, setIcon] = React.useState<string | null>(null)
+  React.useEffect(() => {
+    // Load app icon from main as data URL to satisfy CSP (img-src 'self' data:)
+    // @ts-ignore
+    window.api?.assets?.appIconDataUrl?.().then((url: string | null) => {
+      if (url) setIcon(url)
+    }).catch(() => {})
+  }, [])
   return (
     <div className="flex items-center px-2 py-1 gap-2 sticky top-0 bg-appbg/80 backdrop-blur z-20 border-b border-black/5">
-      <div className="text-sm font-semibold shrink-0 whitespace-nowrap">Memorandum</div>
+      <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
+        {icon ? (
+          <img src={icon} alt="App" className="w-5 h-5 rounded" />
+        ) : (
+          <div className="w-5 h-5 rounded bg-black/20" />
+        )}
+      </div>
       <input
         placeholder="搜索"
         className="rounded-input px-2 py-1 text-sm border border-black/10 bg-white/70 focus:outline-none flex-1 min-w-0"

@@ -16,5 +16,8 @@ contextBridge.exposeInMainWorld('api', {
     setAlwaysOnTop: (args: any) => ipcRenderer.invoke('app:setAlwaysOnTop', args),
     setLock: (args: any) => ipcRenderer.invoke('app:setLock', args),
     setOpacity: (args: any) => ipcRenderer.invoke('app:setOpacity', args)
+  },
+  assets: {
+    appIconDataUrl: () => ipcRenderer.invoke('assets:appIconDataUrl')
   }
 })
