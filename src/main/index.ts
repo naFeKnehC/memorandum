@@ -82,6 +82,19 @@ function trayIcon() {
   return img
 }
 
+function openUserDataDir() {
+  try {
+    const dir = app.getPath('userData')
+    // Prefer showing the specific JSON file if it exists
+    const file = path.join(dir, 'memorandum.json')
+    if (fs.existsSync(file)) {
+      try { shell.showItemInFolder(file) } catch { shell.openPath(dir) }
+    } else {
+      try { shell.openPath(dir) } catch {}
+    }
+  } catch {}
+}
+
 function setMacAppMenu() {
   if (process.platform !== 'darwin') return
   try {
@@ -90,6 +103,8 @@ function setMacAppMenu() {
         label: 'memo',
         submenu: [
           { role: 'about', label: '关于 memo' },
+          { type: 'separator' },
+          { label: '打开数据文件夹', click: () => openUserDataDir() },
           { type: 'separator' },
           { role: 'services' },
           { type: 'separator' },
@@ -118,6 +133,7 @@ function rebuildTrayMenu() {
   const opacityLevels = [1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5]
   const menu = Menu.buildFromTemplate([
     { label: '显示窗口', click: () => { if (win) { win.show(); win.focus() } } },
+    { label: '打开数据文件夹', click: () => openUserDataDir() },
     { type: 'separator' },
     { label: isTop ? '取消置顶' : '置顶', type: 'checkbox', checked: isTop, click: () => { const v = !isTop; win!.setAlwaysOnTop(v); try { repo.setSetting('alwaysOnTop', v ? '1' : '0') } catch {}; rebuildTrayMenu() } },
     { label: clickThroughLocked ? '解除锁定' : '锁定（点击穿透，默认50%）', click: () => {
@@ -339,4 +355,10 @@ ipcMain.handle('assets:appIconDataUrl', () => {
     }
   } catch {}
   return null
+})
+
+// Optional: allow renderer to trigger opening the data folder
+ipcMain.handle('app:openUserDataDir', () => {
+  openUserDataDir()
+  return
 })
