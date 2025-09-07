@@ -12,10 +12,11 @@
       "@renderer/*": ["src/renderer/src/*"],
       "@main/*": ["src/main/*"],
       "@preload/*": ["src/preload/*"],
-      "@types/*": ["types/*"]
+      "@types/*": ["types/*"],
+      "ipc": ["types/ipc"]
     },
-    "types": ["node"]
+    "types": ["node"],
+    "skipLibCheck": true
   },
   "include": ["src", "types", "electron.vite.config.ts"]
 }
-

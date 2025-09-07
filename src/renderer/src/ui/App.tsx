@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
-import type { Task } from '@types/ipc'
+import type { Task } from 'ipc'
 import { api } from '@renderer/lib/ipc'
-import { addDays, format } from 'date-fns'
+import { addDays } from 'date-fns'
 
 function TopBar(props: {
   alwaysOnTop: boolean

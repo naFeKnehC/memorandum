@@ -3,3 +3,5 @@
 
 npx --no-install lint-staged
 
+# TypeScript type-check full project
+npx --no-install npm run --silent typecheck || exit 1
